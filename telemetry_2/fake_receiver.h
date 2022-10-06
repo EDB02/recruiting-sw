@@ -1,7 +1,7 @@
 #pragma once
 
 // use this to define the lenght of message passed to can_receive
-#define MAX_CAN_MESSAGE_SIZE 20
+#define MAX_CAN_MESSAGE_SIZE 21
 
 /**
  * @brief simulates opening CAN interface
