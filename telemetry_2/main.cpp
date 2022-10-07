@@ -21,7 +21,7 @@ struct stat{
     float last_time;
 };
 
-static string logs_path = "./logs/", stats_path = "./stats/";
+static const string logs_path = "./logs/", stats_path = "./stats/";
 static FILE *log, *stats;
 static bool opened = 0;
 unordered_map<uint16_t, stat > stats_map;
@@ -64,14 +64,22 @@ int main(void){
     uint64_t payload;
     long long int cur_time;
     float cur_time_ms; //cur_time in ms
-    open_can("../candump.log");
+    if(open_can("../candump.log"))
+    {
+        cout<<"errore apertura file\n";
+        return -1;
+    }
     while(1)
     {
         switch(currentState)
         {
             case IDLE:
                 bytes = can_receive(message);
-                parse(message, bytes, id, payload);
+                if(parse(message, bytes, id, payload))
+                {
+                    cout<<"input error\n";
+                    return -1;
+                }
                 if(id == 0x0A0 && (payload == 0x6601 || payload == 0xFF01))
                 {
                     currentState = RUN;
@@ -85,19 +93,28 @@ int main(void){
                 {
                     log = fopen((logs_path + to_string(cur_time & 0xFFFFFFF) + ".log").c_str(), "w");
                     stats = fopen((stats_path + to_string(cur_time & 0xFFFFFFF) + ".csv").c_str(), "w");
+                    if(!log || !stats)
+                    {
+                        cout<<"Impossibile creare i file. Forse mancano le cartelle stats e logs\n";
+                        return -1;
+                    }
                     opened = 1;
                 }
 
                 bytes = can_receive(message);
 
-                parse(message, bytes, id, payload);
+                if(parse(message, bytes, id, payload))
+                {
+                    cout<<"input error\n";
+                    return -1;
+                }
 
                 if(id == 0x0A0 && (payload == 0x6601 || payload == 0xFF01)) //ignore start messages
                 {
                     continue;
                 }
 
-                if(id == 0x0A0 && payload == 0x66FF)
+                if(id == 0x0A0 && payload == 0x66FF)    //stop message
                 {
                     for(auto i : stats_map)
                     {

@@ -41,7 +41,7 @@ int can_receive(char message[MAX_CAN_MESSAGE_SIZE]){
     
     char c;
     int bytes_received = 0;
-    memset(message, 0, MAX_CAN_MESSAGE_SIZE-1);
+    memset(message, 0, MAX_CAN_MESSAGE_SIZE-1);     //MAX_CAN_MESSAGE_SIZE-1 instead of strlen(message)
 
     if((current_line_count+1) % next_start_stop == 0){
         printf("\n\n%d, %d\n\n", next_start_stop, start_or_stop);
