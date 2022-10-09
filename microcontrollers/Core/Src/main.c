@@ -112,6 +112,7 @@ void read(void)
     sprintf(to_print, "%dmV\n\r", s2_v);
     //HAL_UART_Transmit(&huart2, to_print, strlen(to_print), 100);
     if((s2_v > 2.7) || (s2_v < 1.8)) current_state = DANGER;
+    else current_state = RUNNING;
     SENSOR_2_LAST_T = __HAL_TIM_GET_COUNTER(&htim11) + overflow;
   }
 }
