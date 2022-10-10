@@ -76,7 +76,7 @@ static void MX_TIM11_Init(void);
 /* USER CODE BEGIN PFP */
 void get_time()
 {
-  sprintf(c_time, "%d", (__HAL_TIM_GET_COUNTER(&htim11) + overflow)/10);
+  sprintf(c_time, "%d", (int)(__HAL_TIM_GET_COUNTER(&htim11) + overflow)/10);
 }
 /* USER CODE END PFP */
 
@@ -109,8 +109,6 @@ void read(void)
     int s2_v = s2 / 4096.0 * 3300;
     HAL_GPIO_WritePin(LED_1_GPIO_Port, LED_1_Pin, (s2_v > 2700));
     HAL_GPIO_WritePin(LED_2_GPIO_Port, LED_2_Pin, (s2_v < 1800));
-    sprintf(to_print, "%dmV\n\r", s2_v);
-    //HAL_UART_Transmit(&huart2, to_print, strlen(to_print), 100);
     if((s2_v > 2.7) || (s2_v < 1.8)) current_state = DANGER;
     else current_state = RUNNING;
     SENSOR_2_LAST_T = __HAL_TIM_GET_COUNTER(&htim11) + overflow;
@@ -174,13 +172,6 @@ int main(void)
         read();
         break;
     }
-    
-    /*HAL_ADC_Start(&hadc1);
-    if(HAL_ADC_PollForConversion(&hadc1, 1000) == HAL_OK)
-    {
-      AD_RES = HAL_ADC_GetValue(&hadc1);
-      HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, (AD_RES < 1000));
-    }*/
   }
   /* USER CODE END 3 */
 }
