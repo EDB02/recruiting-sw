@@ -60,7 +60,7 @@ int channel_s = 0;
 uint64_t SENSOR_1_LAST_T = 0;
 uint64_t SENSOR_2_LAST_T = 0;
 uint64_t BUTTON_LAST_T = 0;
-uint64_t overflow = 0;
+uint64_t overflow = -(1<<16);
 
 uint8_t waiting_txt[] = "Board in waiting state - please press the emergency button\n\r";
 uint8_t to_print[50];
@@ -74,7 +74,7 @@ static void MX_ADC1_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_TIM11_Init(void);
 /* USER CODE BEGIN PFP */
-void get_time()
+void get_time(void)
 {
   sprintf(c_time, "%d", (int)(__HAL_TIM_GET_COUNTER(&htim11) + overflow)/10);
 }
@@ -93,6 +93,7 @@ void read(void)
     HAL_ADC_Start(&hadc1);
     if(HAL_ADC_PollForConversion(&hadc1, 100) == HAL_OK)
       s1 = HAL_ADC_GetValue(&hadc1);
+      
     int s1_v = s1 / 4096.0 * 3300;
     sprintf(to_print, "[%s] %dmV\n\r", c_time, s1_v);
     HAL_UART_Transmit(&huart2, to_print, strlen(to_print), 100);
@@ -405,14 +406,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     BUTTON_LAST_T = __HAL_TIM_GET_COUNTER(&htim11) + overflow;
   }
 }
-uint8_t first = 1;
+
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-  if(first)
-  {
-    first = 0;
-    return;
-  }
   overflow += (1<<16);
 }
 /* USER CODE END 4 */
