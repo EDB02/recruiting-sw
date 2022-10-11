@@ -64,7 +64,6 @@ uint64_t overflow = -(1<<16);
 
 uint8_t waiting_txt[] = "Board in waiting state - please press the emergency button\n\r";
 uint8_t to_print[50];
-uint8_t c_time[20];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -74,10 +73,6 @@ static void MX_ADC1_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_TIM11_Init(void);
 /* USER CODE BEGIN PFP */
-void get_time(void)
-{
-  sprintf(c_time, "%d", (int)(__HAL_TIM_GET_COUNTER(&htim11) + overflow)/10);
-}
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -87,7 +82,6 @@ void read(void)
   uint16_t s1 = 0, s2 = 0;
   if(__HAL_TIM_GET_COUNTER(&htim11) + overflow >= (SENSOR_1_LAST_T + SENSOR_1_DELAY*10))
   {
-    get_time();
     channel_s = 0;
     MX_ADC1_Init();
     HAL_ADC_Start(&hadc1);
@@ -95,7 +89,7 @@ void read(void)
       s1 = HAL_ADC_GetValue(&hadc1);
       
     int s1_v = s1 / 4096.0 * 3300;
-    sprintf(to_print, "[%s] %dmV\n\r", c_time, s1_v);
+    sprintf(to_print, "[%d] %dmV\n\r", (int)(__HAL_TIM_GET_COUNTER(&htim11) + overflow)/10, s1_v);
     HAL_UART_Transmit(&huart2, to_print, strlen(to_print), 100);
     SENSOR_1_LAST_T = __HAL_TIM_GET_COUNTER(&htim11) + overflow;
   }
