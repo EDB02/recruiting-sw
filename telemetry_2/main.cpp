@@ -15,6 +15,12 @@ enum state{
     RUN
 } currentState;
 
+enum message_type{
+    START,
+    STOP,
+    GENERIC
+};
+
 struct stat{
     uint32_t number_of_messages;
     float mean_time;
@@ -26,9 +32,32 @@ static FILE *log, *stats;
 static bool opened = 0;
 unordered_map<uint16_t, stat > stats_map;
 
-void parse(char *message, uint16_t &id, uint64_t &payload)
+int parse(const char *message, uint16_t &id, uint8_t* payload)
 {
-    sscanf(message, "%X#%X", &id, &payload);
+    char tmp[17];
+    sscanf(message, "%hX#%s", &id, tmp);
+
+    int size = strlen(tmp)/2;
+    for(int i=0;i<size;i++)
+    {
+        sscanf(tmp, "%2hhX%s", &payload[i], tmp);
+    }
+
+    return size;
+}
+
+message_type get_type(uint16_t &id, uint8_t* payload, uint8_t size)
+{
+    if(size == 2)
+    {
+        if(id == 0x0A0)
+        {
+            if((payload[0]<<8) + payload[1] == 0x6601) return START;
+            if((payload[0]<<8) + payload[1] == 0xFF01) return START;
+            if((payload[0]<<8) + payload[1] == 0x66FF) return STOP;
+        }
+    }
+    return GENERIC;
 }
 
 
@@ -36,7 +65,7 @@ int main(void){
     char message[MAX_CAN_MESSAGE_SIZE];
     int bytes, index;
     uint16_t id;
-    uint64_t payload;
+    uint8_t payload[8], payload_s;
     long long int cur_time;
     float cur_time_ms; //cur_time in ms
     if(open_can("../candump.log"))
@@ -50,8 +79,8 @@ int main(void){
         {
         case IDLE:
             bytes = can_receive(message);
-            parse(message, id, payload);
-            if(id == 0x0A0 && (payload == 0x6601 || payload == 0xFF01))
+            payload_s = parse(message, id, payload);
+            if(get_type(id, payload, payload_s) == START)
             {
                 currentState = RUN;
             }
@@ -74,14 +103,15 @@ int main(void){
 
             bytes = can_receive(message);
 
-            parse(message, id, payload);
+            payload_s = parse(message, id, payload);
 
-            if(id == 0x0A0 && (payload == 0x6601 || payload == 0xFF01)) //ignore start messages
+            if(get_type(id, payload, payload_s) == START) //ignore start messages
             {
+                cout<<"START"<<endl;
                 continue;
             }
 
-            if(id == 0x0A0 && payload == 0x66FF)    //stop message
+            if(get_type(id, payload, payload_s) == STOP)
             {
                 for(auto i : stats_map)
                 {
